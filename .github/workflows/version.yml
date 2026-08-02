@@ -1,0 +1,28 @@
+name: Version
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: changestack-version
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  changesets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run changestack
+        id: changestack
+        uses: ./
+      - name: Report
+        env:
+          RELEASES: ${{ steps.changestack.outputs.releases }}
+        run: echo "$RELEASES" | jq .

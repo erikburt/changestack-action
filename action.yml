@@ -1,0 +1,66 @@
+name: changestack
+description: >-
+  Run the changestack flow: create tags and GitHub Releases for merged
+  version PRs, then open or update the version PR from pending
+  changesets.
+
+inputs:
+  version:
+    description: 'changestack CLI version to use, or "latest".'
+    required: false
+    default: latest
+  token:
+    description: >-
+      GitHub token with contents:write and pull-requests:write. Exported
+      to the CLI as GITHUB_TOKEN.
+    required: false
+    default: ${{ github.token }}
+  cwd:
+    description: Repository root to operate in.
+    required: false
+    default: "."
+  dir:
+    description: Changestack directory override (default .changestack).
+    required: false
+    default: ""
+  mode:
+    description: >-
+      "auto" runs release then release-pr; "release" or "release-pr"
+      runs only that half.
+    required: false
+    default: auto
+
+outputs:
+  released:
+    description: '"true" when any package was newly released or tagged.'
+    value: ${{ steps.run.outputs.released }}
+  releases:
+    description: >-
+      JSON release outcome: {released, prs, releases: [{name, dir,
+      version, tag, aliases, strategy, githubRelease, status}],
+      byStrategy: {<strategy>: [...]}}.
+    value: ${{ steps.run.outputs.releases }}
+  pr-number:
+    description: The open version PR's number, when one exists.
+    value: ${{ steps.run.outputs.pr-number }}
+  pr-url:
+    description: The open version PR's URL, when one exists.
+    value: ${{ steps.run.outputs.pr-url }}
+
+runs:
+  using: composite
+  steps:
+    - id: install
+      shell: bash
+      env:
+        CS_VERSION: ${{ inputs.version }}
+        GH_TOKEN: ${{ inputs.token }}
+      run: '"$GITHUB_ACTION_PATH/scripts/install.sh"'
+    - id: run
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+        CS_MODE: ${{ inputs.mode }}
+        CS_CWD: ${{ inputs.cwd }}
+        CS_DIR: ${{ inputs.dir }}
+      run: '"$GITHUB_ACTION_PATH/scripts/run.sh"'

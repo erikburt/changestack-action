@@ -1,0 +1,10 @@
+version: 1
+packages: ["."]
+changelog:
+  format: github
+tag:
+  format: "v{version}"
+  # Floating major tag so consumers can pin `uses: erikburt/changestack-action@v1`.
+  aliases: ["v{major}"]
+github:
+  repo: erikburt/changestack-action

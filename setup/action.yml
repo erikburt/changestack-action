@@ -1,0 +1,47 @@
+name: Setup changestack
+description: >-
+  Install the changestack CLI from GitHub release binaries, using the
+  runner tool cache.
+
+inputs:
+  version:
+    description: 'Version to install ("0.2.0" or "v0.2.0"), or "latest".'
+    required: false
+    default: latest
+  token:
+    description: >-
+      GitHub token used for the release-lookup API call (rate limits).
+      Downloads themselves are unauthenticated; the default is fine.
+    required: false
+    default: ${{ github.token }}
+  os:
+    description: Target OS (linux or darwin). Defaults to the runner's.
+    required: false
+    default: ""
+  arch:
+    description: Target architecture (amd64 or arm64). Defaults to the runner's.
+    required: false
+    default: ""
+
+outputs:
+  version:
+    description: The resolved version that was installed (no "v" prefix).
+    value: ${{ steps.install.outputs.version }}
+  cached:
+    description: Whether the binary came from the tool cache.
+    value: ${{ steps.install.outputs.cached }}
+  path:
+    description: Tool-cache directory containing the changestack binary.
+    value: ${{ steps.install.outputs.path }}
+
+runs:
+  using: composite
+  steps:
+    - id: install
+      shell: bash
+      env:
+        CS_VERSION: ${{ inputs.version }}
+        CS_OS: ${{ inputs.os }}
+        CS_ARCH: ${{ inputs.arch }}
+        GH_TOKEN: ${{ inputs.token }}
+      run: '"$GITHUB_ACTION_PATH/../scripts/install.sh"'

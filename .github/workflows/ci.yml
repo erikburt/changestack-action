@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: actionlint
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint -color
+      - name: shellcheck
+        run: shellcheck scripts/*.sh
+
+  setup-e2e:
+    name: Setup e2e (${{ matrix.runner }})
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install (cold cache)
+        id: first
+        uses: ./setup
+      - name: CLI is on PATH
+        run: changestack --version
+      - name: Install again (warm cache)
+        id: second
+        uses: ./setup
+      - name: Assert tool cache behavior
+        env:
+          FIRST_CACHED: ${{ steps.first.outputs.cached }}
+          SECOND_CACHED: ${{ steps.second.outputs.cached }}
+          VERSION: ${{ steps.second.outputs.version }}
+        run: |
+          [[ "$FIRST_CACHED" == "false" ]]
+          [[ "$SECOND_CACHED" == "true" ]]
+          [[ -n "$VERSION" ]]
